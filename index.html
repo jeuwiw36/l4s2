@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Embedded Browser — Whitelist Guard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ HEADER / TOOLBAR ============ -->
+  <header class="topbar glass">
+    <div class="topbar-left">
+      <span class="app-title">🌐 Embedded Browser</span>
+      <div class="status-pill" id="statusPill">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Đang khởi tạo…</span>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <button class="btn" id="btnBack" title="Quay lại">← Quay lại</button>
+      <button class="btn" id="btnReload" title="Tải lại">⟳ Tải lại</button>
+      <button class="btn" id="btnHome" title="Về trang chủ ban đầu">⌂ Home</button>
+    </div>
+  </header>
+
+  <!-- ============ URL BAR (hiển thị, không cho sửa) ============ -->
+  <div class="urlbar glass">
+    <span class="lock-icon" id="lockIcon">🔒</span>
+    <span class="url-text" id="urlText">https://link4sub.com/O03GrwdHOO</span>
+  </div>
+
+  <!-- ============ IFRAME CONTAINER ============ -->
+  <main class="frame-wrapper glass">
+
+    <!-- Loading overlay -->
+    <div class="overlay" id="loadingOverlay">
+      <div class="spinner"></div>
+      <p id="loadingText">Đang tải nội dung…</p>
+    </div>
+
+    <!-- Blocked overlay -->
+    <div class="overlay overlay-blocked hidden" id="blockedOverlay">
+      <div class="overlay-card">
+        <h2>🚫 Navigation Blocked</h2>
+        <p>Domain này không nằm trong danh sách được phép.</p>
+        <p class="blocked-url" id="blockedUrlText"></p>
+        <div class="overlay-actions">
+          <button class="btn btn-primary" id="btnBlockedBack">Quay lại</button>
+          <button class="btn" id="btnBlockedReload">Tải lại</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error overlay -->
+    <div class="overlay overlay-error hidden" id="errorOverlay">
+      <div class="overlay-card">
+        <h2>⚠️ Đã xảy ra lỗi</h2>
+        <p id="errorMessage">Không thể tải nội dung.</p>
+        <div class="overlay-actions">
+          <button class="btn btn-primary" id="btnErrorReload">Tải lại</button>
+          <button class="btn" id="btnErrorHome">Về trang chủ</button>
+        </div>
+      </div>
+    </div>
+
+    <iframe
+      id="browserFrame"
+      src="https://link4sub.com/O03GrwdHOO"
+      title="Embedded Browser"
+      referrerpolicy="no-referrer-when-downgrade"
+      sandbox="allow-scripts allow-forms allow-popups allow-same-origin allow-popups-to-escape-sandbox"
+      loading="eager">
+    </iframe>
+
+  </main>
+
+  <!-- ============ FOOTER NOTE ============ -->
+  <footer class="footer-note">
+    <p>
+      ⓘ Do giới hạn <strong>Same-Origin Policy</strong> của trình duyệt, trang này
+      <u>không thể</u> đọc trực tiếp URL bên trong iframe khi iframe điều hướng sang
+      một origin khác (cross-origin). Trạng thái hiển thị dựa trên sự kiện
+      <code>load</code> và thông tin có thể quan sát được một cách an toàn.
+      Xem mục "Giới hạn kỹ thuật" để biết chi tiết.
+    </p>
+  </footer>
+
+</div>
+
+<!-- ============ TOAST CONTAINER ============ -->
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="script.js"></script>
+</body>
+</html>

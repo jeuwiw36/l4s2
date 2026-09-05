@@ -27,6 +27,34 @@ const CONFIG = Object.freeze({
   TOAST_DURATION_MS: 3500
 });
 
+/*
+  CHÍNH SÁCH POPUP / TAB MỚI
+  ----------------------------------------------------------------
+  Theo yêu cầu: mọi nội dung phải ở lại BÊN TRONG iframe, không
+  được thoát ra tab/cửa sổ mới (target="_blank", window.open(), ...).
+
+  Cách triển khai: thuộc tính `sandbox` của thẻ <iframe> trong
+  index.html KHÔNG chứa "allow-popups". Theo đặc tả HTML sandbox,
+  khi thiếu "allow-popups", trình duyệt sẽ TỰ ĐỘNG chặn mọi lời gọi
+  window.open() và mọi điều hướng target="_blank"/"_parent"/"_top"
+  phát sinh từ bên trong nội dung iframe — kể cả khi nội dung đó là
+  cross-origin. Đây là cơ chế chặn ở TẦNG TRÌNH DUYỆT, không phải
+  JavaScript của trang cha, nên nó hoạt động đáng tin cậy mà không
+  vi phạm Same-Origin Policy.
+
+  GIỚI HẠN CẦN HIỂU RÕ:
+  - Khi bị chặn, link đó chỉ đơn giản KHÔNG làm gì cả (không mở tab
+    mới) — trình duyệt KHÔNG tự động "chuyển" link đó thành điều
+    hướng bên trong iframe hiện tại. Nếu trang con muốn URL đó hiển
+    thị ngay trong iframe, chính trang con phải tự gọi
+    `location.href = url` (điều hướng cùng cửa sổ) thay vì mở tab
+    mới — đây là hành vi của website đích, trang cha không có cách
+    nào ép buộc DOM/JS bên trong một iframe cross-origin.
+  - Vì nội dung là cross-origin, trang cha KHÔNG nhận được bất kỳ
+    sự kiện nào khi một popup bị chặn (không có cách nào để hiện
+    toast "đã chặn popup" một cách chính xác cho trường hợp này).
+*/
+
 /* ================================================================
    2) URL VALIDATOR
    ----------------------------------------------------------------
@@ -339,9 +367,42 @@ const IframeController = (() => {
     }
   }
 
+  /**
+   * Lớp phòng vệ bổ sung: CHỈ có tác dụng trong trường hợp hiếm khi
+   * nội dung iframe same-origin với trang cha (ví dụ về:blank ban
+   * đầu, hoặc bạn tự host nội dung cùng domain). Ghi đè
+   * `contentWindow.open` để mọi lời gọi window.open() bên trong
+   * điều hướng NGAY TRONG iframe hiện tại thay vì mở cửa sổ mới.
+   *
+   * Với nội dung cross-origin thật (link4sub.com, onthitracnghiem.com
+   * khi host ở domain khác), trình duyệt sẽ ném lỗi khi ta cố truy
+   * cập contentWindow — đây là hành vi SOP chuẩn, ta bắt lỗi và bỏ
+   * qua một cách an toàn. Việc chặn popup cho trường hợp cross-origin
+   * đã được xử lý ở tầng browser thông qua thuộc tính `sandbox`
+   * (không có "allow-popups") trong index.html.
+   */
+  function tryOverrideWindowOpenIfSameOrigin() {
+    try {
+      const win = iframe.contentWindow;
+      // Truy cập .document để "chạm" vào same-origin check ngay lập tức;
+      // nếu cross-origin, dòng này sẽ ném lỗi trước khi ta kịp gán gì.
+      void win.document;
+
+      win.open = function (url) {
+        if (url) {
+          navigateTo(url, true);
+        }
+        return null;
+      };
+    } catch (err) {
+      // Cross-origin — không thể và không cần override, sandbox đã lo việc chặn popup.
+    }
+  }
+
   function attachLoadListener(onLoadCallback) {
     iframe.addEventListener("load", () => {
       clearLoadTimeout();
+      tryOverrideWindowOpenIfSameOrigin();
       onLoadCallback();
     });
 
